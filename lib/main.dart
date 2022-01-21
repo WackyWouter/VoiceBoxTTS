@@ -14,7 +14,7 @@ class VoiceBoxTTS extends StatelessWidget {
       title: 'VoiceBoxTTS',
       initialRoute: HomeScreen.id,
       routes: {
-        HomeScreen.id: (context) => HomeScreen(),
+        HomeScreen.id: (context) => const HomeScreen(),
       },
     );
 

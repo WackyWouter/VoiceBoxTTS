@@ -9,6 +9,8 @@ class HomeScreen extends StatefulWidget {
   final Color textColor = kTextColor;
   final Color headerTextColor = kHeaderTextColor;
 
+  const HomeScreen({Key? key}) : super(key: key);
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
