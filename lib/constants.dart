@@ -8,3 +8,4 @@ const Color kPrimaryDarkColor = Color(0xFF612AA8);
 const Color kHeaderTextColor = Color(0xFFFFFFFF);
 const Color kTextColor = Color(0xFF000000);
 const String kAppName = 'VoiceBoxTTS';
+const double kRadius = 5.0;
