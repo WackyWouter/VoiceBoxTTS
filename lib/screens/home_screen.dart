@@ -81,15 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   String activeSection = "history";
-  List<FavListItem> historyList = [
-    FavListItem(
-        // 'I am currently testing this new feature to see if it works correctly.',
-        'test',
-        false),
-    FavListItem('test2', true),
-    FavListItem('test3', true),
-    FavListItem('test4', true)
-  ];
+  List<FavListItem> historyList = [];
   List<FavListItem> savedList = [];
   final textFieldCont = TextEditingController();
 
@@ -182,6 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onChange(String text) {
     setState(() {
       _newVoiceText = text;
+      historyList.insert(0, FavListItem(text, false));
     });
   }
 
@@ -402,7 +395,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                             GestureDetector(
                                               onTap: () {
                                                 setState(() {
+                                                  // Toggle favourite on the current list item if clicked on star
                                                   listShown[index].toggleFav();
+
+                                                  // if it is being favoured add to saved list otherwise remove from saved list
+                                                  if (listShown[index]
+                                                      .isFavorite) {
+                                                    savedList.insert(
+                                                        0, listShown[index]);
+                                                  } else {
+                                                    savedList.remove(
+                                                        listShown[index]);
+                                                  }
                                                 });
                                               },
                                               child: Container(
@@ -410,9 +414,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       const EdgeInsets.all(0.0),
                                                   child: FaIcon(
                                                     listShown[index].isFavorite
-                                                        ? FontAwesomeIcons.star
-                                                        : FontAwesomeIcons
-                                                            .solidStar,
+                                                        ? FontAwesomeIcons
+                                                            .solidStar
+                                                        : FontAwesomeIcons.star,
                                                     color: kPrimaryColor,
                                                     size: 30.0,
                                                   )),
