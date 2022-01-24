@@ -174,7 +174,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onChange(String text) {
     setState(() {
       _newVoiceText = text;
-      historyList.insert(0, FavListItem(text, false));
+
+      // if text is not being cleared add it to history list
+      if (text != '') {
+        historyList.insert(0, FavListItem(text, false));
+      }
     });
   }
 
