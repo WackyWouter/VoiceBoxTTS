@@ -3,19 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:voiceboxtts/constants.dart';
+import 'package:voiceboxtts/constants.dart' as constants;
 import 'package:voiceboxtts/models/fav_list_item.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String id = 'home_screen';
-
-  final String title = kAppName;
-  final Color headerColor = kHeaderBgColor;
-  final Color textColor = kTextColor;
-  final Color primaryColor = kPrimaryColor;
-  final Color cardColor = kCardBgColor;
-  final Color primaryDarkColor = kPrimaryDarkColor;
-  final Color headerTextColor = kHeaderTextColor;
 
   final double radius = 5.0;
 
@@ -28,8 +20,11 @@ class HomeScreen extends StatefulWidget {
 enum TtsState { playing, stopped, paused, continued }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // TODO make the list be remembered between app startups
   // https://stackoverflow.com/questions/61316208/how-to-save-listobject-to-sharedpreferences-in-flutter
   // https://stackoverflow.com/questions/63280237/flutter-how-to-save-list-data-locally
+
+  // TODO add settings for changing pitch, rate and volume
 
   List<DropdownMenuItem<String>> menuItems = [
     const DropdownMenuItem(child: Text("Albanian"), value: "sq"),
@@ -90,7 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
   double volume = 0.5;
   double pitch = 1.0;
   double rate = 0.5;
-  bool isCurrentLanguageInstalled = false;
 
   String? _newVoiceText;
 
@@ -105,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
   }
 
+  //TODO make a class for this
   initTts() {
     flutterTts = FlutterTts();
 
@@ -131,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     flutterTts.setErrorHandler((msg) {
       setState(() {
-        print("error: $msg ");
+        debugPrint("error: $msg ");
         ttsState = TtsState.stopped;
       });
     });
@@ -161,25 +156,118 @@ class _HomeScreenState extends State<HomeScreen> {
     flutterTts.stop();
   }
 
-  void changedLanguageDropDownItem(String? selectedType) {
-    setState(() {
-      language = selectedType;
-      flutterTts.setLanguage(language!);
-      flutterTts
-          .isLanguageInstalled(language!)
-          .then((value) => isCurrentLanguageInstalled = (value as bool));
-    });
+  Future<bool> changedLanguageDropDownItem(String? selectedType) async {
+    bool isLanguageSupported =
+        await flutterTts.isLanguageAvailable(selectedType!);
+
+    if (isLanguageSupported) {
+      setState(() {
+        language = selectedType;
+        flutterTts.setLanguage(language!);
+      });
+      return true;
+    } else {
+      return false;
+    }
   }
 
   void _onChange(String text) {
     setState(() {
-      _newVoiceText = text;
-
       // if text is not being cleared add it to history list
-      if (text != '') {
+      if (text != '' && _newVoiceText != text) {
         historyList.insert(0, FavListItem(text, false));
       }
+
+      if (_newVoiceText != text) {
+        _newVoiceText = text;
+      }
     });
+  }
+
+  void _clearText() {
+    textFieldCont.text = '';
+    _onChange('');
+  }
+
+  void _speakOrStop() {
+    //tell the user to type something first if the input is empty
+    if (textFieldCont.text != '') {
+      _onChange(textFieldCont.text);
+
+      if (ttsState == TtsState.stopped) {
+        _speak();
+      } else {
+        _stop();
+      }
+    } else {
+      final SnackBar snackBar = SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: const Text('Please enter text into the textfield first.'),
+        action: SnackBarAction(
+          label: 'Dismiss',
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      );
+      // first try to hide one in case the previous one is still open
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      // Find the Scaffold in the widget tree and use
+      // it to show a SnackBar.
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
+  }
+
+  void _changeActiveSection(String section) {
+    setState(() {
+      activeSection = section;
+    });
+  }
+
+  void _toggleFavourite(FavListItem item) {
+    setState(() {
+      // Toggle favourite on the current list item if clicked on star
+      item.toggleFav();
+
+      // if it is being favoured add to saved list otherwise remove from saved list
+      if (item.isFavorite) {
+        savedList.insert(0, item);
+      } else {
+        savedList.remove(item);
+      }
+    });
+  }
+
+  Future<void> _showDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: const <Widget>[
+                Text('The current Language is not supported.'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text(
+                'Change Language',
+                style: TextStyle(color: constants.primary),
+              ),
+              onPressed: () {
+                changedLanguageDropDownItem('en-GB');
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -190,10 +278,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        backgroundColor: kHeaderBgColor,
+        backgroundColor: constants.headerBg,
         titleTextStyle: const TextStyle(
-            color: kHeaderTextColor, fontFamily: 'RobotoLocal', fontSize: 18),
-        title: const Text(kAppName),
+            color: constants.headerText,
+            fontFamily: 'RobotoLocal',
+            fontSize: 18),
+        title: const Text(constants.appName),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 20.0),
@@ -203,14 +293,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () {},
                   child: const FaIcon(
                     FontAwesomeIcons.cog,
-                    color: kPrimaryColor,
+                    color: constants.primary,
                     size: 25,
                   )),
             ),
           )
         ],
       ),
-      backgroundColor: kBodyBgColor,
+      backgroundColor: constants.bodyBg,
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -222,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.maxFinite,
                 child: Card(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(kRadius),
+                    borderRadius: BorderRadius.circular(constants.borderRadius),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton2(
@@ -231,10 +321,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: const TextStyle(
                           fontFamily: 'RobotoLocal',
                           fontSize: 18,
-                          color: kTextColor),
+                          color: constants.text),
                       icon: const FaIcon(FontAwesomeIcons.caretDown,
-                          color: kPrimaryColor, size: 30),
-                      onChanged: changedLanguageDropDownItem,
+                          color: constants.primary, size: 30),
+                      onChanged: (String? value) async {
+                        bool success = await changedLanguageDropDownItem(value);
+
+                        //If it failed show dialog that language is not supported
+                        if (true) {
+                          _showDialog();
+                        }
+                      },
                       items: menuItems,
                       itemPadding: const EdgeInsets.symmetric(horizontal: 10),
                       buttonPadding: const EdgeInsets.symmetric(horizontal: 10),
@@ -247,7 +344,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
               child: Card(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(kRadius),
+                    borderRadius: BorderRadius.circular(constants.borderRadius),
                   ),
                   child: Column(
                     children: [
@@ -261,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: const InputDecoration(
                               border: InputBorder.none,
                               hintText: 'Type here...'),
-                          maxLines: 5,
+                          maxLines: 10,
                         ),
                       ),
                       Row(
@@ -270,32 +367,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(0, 0, 20, 10),
                             child: GestureDetector(
-                                onTap: () {
-                                  textFieldCont.text = '';
-                                  _onChange('');
-                                },
+                                onTap: _clearText,
                                 child: const FaIcon(
                                   FontAwesomeIcons.eraser,
-                                  color: kPrimaryColor,
+                                  color: constants.primary,
                                   size: 27,
                                 )),
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(0, 0, 10, 10),
                             child: GestureDetector(
-                                onTap: () {
-                                  print(textFieldCont.text);
-                                  _onChange(textFieldCont.text);
-
-                                  if (ttsState == TtsState.stopped) {
-                                    _speak();
-                                  } else {
-                                    _stop();
-                                  }
-                                },
+                                onTap: _speakOrStop,
                                 child: const FaIcon(
                                   FontAwesomeIcons.play,
-                                  color: kPrimaryColor,
+                                  color: constants.primary,
                                   size: 25,
                                 )),
                           ),
@@ -309,7 +394,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                 child: Card(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(kRadius),
+                      borderRadius:
+                          BorderRadius.circular(constants.borderRadius),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -323,23 +409,22 @@ class _HomeScreenState extends State<HomeScreen> {
                             Expanded(
                               child: ClipRRect(
                                 borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(kRadius)),
+                                    topLeft: Radius.circular(
+                                        constants.borderRadius)),
                                 child: Container(
                                   height: 45,
                                   decoration: BoxDecoration(
                                     color: activeSection == 'history'
-                                        ? kPrimaryDarkColor
-                                        : kPrimaryColor,
+                                        ? constants.primaryDark
+                                        : constants.primary,
                                   ),
                                   child: TextButton(
                                     style: TextButton.styleFrom(
-                                      primary: widget.headerTextColor,
+                                      primary: constants.buttonText,
                                       textStyle: const TextStyle(fontSize: 18),
                                     ),
                                     onPressed: () {
-                                      setState(() {
-                                        activeSection = 'history';
-                                      });
+                                      _changeActiveSection('history');
                                     },
                                     child: const Text('History'),
                                   ),
@@ -349,23 +434,22 @@ class _HomeScreenState extends State<HomeScreen> {
                             Expanded(
                               child: ClipRRect(
                                 borderRadius: const BorderRadius.only(
-                                    topRight: Radius.circular(kRadius)),
+                                    topRight: Radius.circular(
+                                        constants.borderRadius)),
                                 child: Container(
                                   height: 45,
                                   decoration: BoxDecoration(
                                     color: activeSection == 'saved'
-                                        ? kPrimaryDarkColor
-                                        : kPrimaryColor,
+                                        ? constants.primaryDark
+                                        : constants.primary,
                                   ),
                                   child: TextButton(
                                     style: TextButton.styleFrom(
-                                      primary: widget.headerTextColor,
+                                      primary: constants.buttonText,
                                       textStyle: const TextStyle(fontSize: 18),
                                     ),
                                     onPressed: () {
-                                      setState(() {
-                                        activeSection = 'saved';
-                                      });
+                                      _changeActiveSection('saved');
                                     },
                                     child: const Text('Saved'),
                                   ),
@@ -379,63 +463,50 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: ListView.builder(
                             itemCount: listShown.length,
                             itemBuilder: (BuildContext context, int index) {
+                              //Determine which icon should be shown
+                              IconData iconShown;
+                              if (listShown[index].isFavorite) {
+                                iconShown = FontAwesomeIcons.solidStar;
+                              } else {
+                                iconShown = FontAwesomeIcons.star;
+                              }
+
                               return GestureDetector(
                                 onTap: () {},
                                 child: Column(
                                   children: <Widget>[
-                                    Container(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(10),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: <Widget>[
-                                            Text(
+                                    Padding(
+                                      padding: const EdgeInsets.all(10),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: <Widget>[
+                                          Expanded(
+                                            child: Text(
                                               listShown[index].text,
                                               textAlign: TextAlign.left,
                                               style:
                                                   const TextStyle(fontSize: 18),
                                             ),
-                                            GestureDetector(
-                                              onTap: () {
-                                                setState(() {
-                                                  // Toggle favourite on the current list item if clicked on star
-                                                  listShown[index].toggleFav();
-
-                                                  // if it is being favoured add to saved list otherwise remove from saved list
-                                                  if (listShown[index]
-                                                      .isFavorite) {
-                                                    savedList.insert(
-                                                        0, listShown[index]);
-                                                  } else {
-                                                    savedList.remove(
-                                                        listShown[index]);
-                                                  }
-                                                });
-                                              },
-                                              child: Container(
-                                                  margin:
-                                                      const EdgeInsets.all(0.0),
-                                                  child: FaIcon(
-                                                    listShown[index].isFavorite
-                                                        ? FontAwesomeIcons
-                                                            .solidStar
-                                                        : FontAwesomeIcons.star,
-                                                    color: kPrimaryColor,
-                                                    size: 30.0,
-                                                  )),
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                          GestureDetector(
+                                            onTap: () {
+                                              _toggleFavourite(
+                                                  listShown[index]);
+                                            },
+                                            child: Container(
+                                                margin: const EdgeInsets.only(
+                                                    left: 10),
+                                                child: FaIcon(
+                                                  iconShown,
+                                                  color: constants.primary,
+                                                  size: 30.0,
+                                                )),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    (index != (listShown.length - 1))
-                                        ? const Divider(
-                                            thickness: 1.5,
-                                            color: kDividerColor,
-                                            height: 1.5,
-                                          )
-                                        : const SizedBox()
+                                    showDivider(index, listShown.length)
                                   ],
                                 ),
                               );
@@ -460,5 +531,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget showDivider(int index, int listLength) {
+    if (index != (listLength - 1)) {
+      return const Divider(
+        thickness: 1.5,
+        color: constants.divider,
+        height: 1.5,
+      );
+    } else {
+      return const SizedBox();
+    }
   }
 }

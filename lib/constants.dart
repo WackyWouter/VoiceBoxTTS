@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 
-//TODO make remake this which classes or something that seperate text and color constants
-//also change it to import like this import 'constants.dart' as Constants;
-// so i can do this String a = Constants.SUCCESS_MESSAGE;
+// Colors
+const Color headerBg = Color(0xFF2C2C2C);
+const Color bodyBg = Color(0xFF3E3E3E);
+const Color cardBg = Color(0xFFFFFFFF);
+const Color primary = Color(0xFF9747FF);
+const Color primaryDark = Color(0xFF612AA8);
+const Color headerText = Color(0xFFFFFFFF);
+const Color buttonText = Color(0xFFFFFFFF);
+const Color text = Color(0xFF000000);
+const Color divider = Color(0xFFE7E7E7);
 
-const Color kHeaderBgColor = Color(0xFF2C2C2C);
-const Color kBodyBgColor = Color(0xFF3E3E3E);
-const Color kCardBgColor = Color(0xFFFFFFFF);
-const Color kPrimaryColor = Color(0xFF9747FF);
-const Color kPrimaryDarkColor = Color(0xFF612AA8);
-const Color kHeaderTextColor = Color(0xFFFFFFFF);
-const Color kTextColor = Color(0xFF000000);
-const Color kDividerColor = Color(0xFFE7E7E7);
-const String kAppName = 'VoiceBoxTTS';
-const double kRadius = 5.0;
+// Strings
+const String appName = 'VoiceBoxTTS';
+
+// Integers, doubles and floats
+const double borderRadius = 5.0;
