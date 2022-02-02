@@ -5,6 +5,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:voiceboxtts/constants.dart' as constants;
 import 'package:voiceboxtts/models/fav_list_item.dart';
+import 'package:voiceboxtts/screens/settings_screen.dart';
 import 'package:voiceboxtts/widgets/custom_card.dart';
 import 'package:voiceboxtts/widgets/custom_icon_btn.dart';
 import 'package:voiceboxtts/widgets/section_btn.dart';
@@ -12,8 +13,6 @@ import 'package:voiceboxtts/widgets/show_divider.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String id = 'home_screen';
-
-  final double radius = 5.0;
 
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -261,7 +260,17 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.center,
               child: CustomIconBtn(
                 icon: FontAwesomeIcons.cog,
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => SettingsScreen(
+                              volume: volume,
+                              rate: rate,
+                              pitch: pitch,
+                            )),
+                  );
+                },
               ),
             ),
           )
