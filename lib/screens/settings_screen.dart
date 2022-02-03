@@ -34,8 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: CustomIconBtn(
               icon: FontAwesomeIcons.arrowLeft,
               onTap: () {
-                //  TODO add the sending back of the values
-                Navigator.of(context).pop();
+                Navigator.pop(context);
               },
             ),
           ),
@@ -101,6 +100,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           max: 1.0,
                           divisions: 10,
                           label: "Rate",
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 20),
+                              child: CustomIconBtn(
+                                icon: FontAwesomeIcons.undo,
+                                size: 22,
+                                onTap: () {
+                                  // reset back to default values
+                                  setState(() {
+                                    widget.volume = 0.5;
+                                    widget.rate = 0.5;
+                                    widget.pitch = 1.0;
+                                  });
+                                },
+                              ),
+                            ),
+                            CustomIconBtn(
+                              icon: FontAwesomeIcons.solidSave,
+                              onTap: () {
+                                // Send the changed values back
+                                Navigator.pop(context, {
+                                  'volume': widget.volume,
+                                  'rate': widget.rate,
+                                  'pitch': widget.pitch,
+                                });
+                              },
+                            ),
+                          ],
                         )
                       ],
                     ),

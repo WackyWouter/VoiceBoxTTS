@@ -27,8 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // https://stackoverflow.com/questions/61316208/how-to-save-listobject-to-sharedpreferences-in-flutter
   // https://stackoverflow.com/questions/63280237/flutter-how-to-save-list-data-locally
 
-  // TODO add settings for changing pitch, rate and volume
-
   ////////////////////////// START HISTORY/SAVED LISTS //////////////////////////////
   String activeSection = "history";
   List<FavListItem> historyList = [];
@@ -260,16 +258,24 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.center,
               child: CustomIconBtn(
                 icon: FontAwesomeIcons.cog,
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  dynamic values = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => SettingsScreen(
-                              volume: volume,
-                              rate: rate,
-                              pitch: pitch,
-                            )),
+                      builder: (context) => SettingsScreen(
+                        volume: volume,
+                        rate: rate,
+                        pitch: pitch,
+                      ),
+                    ),
                   );
+                  if (values != null) {
+                    setState(() {
+                      volume = values['volume'];
+                      rate = values['rate'];
+                      pitch = values['pitch'];
+                    });
+                  }
                 },
               ),
             ),
