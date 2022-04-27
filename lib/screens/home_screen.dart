@@ -151,6 +151,20 @@ class _HomeScreenState extends State<HomeScreen> {
   get isPlaying => ttsState == TtsState.playing;
   get isStopped => ttsState == TtsState.stopped;
 
+  void _getSettings() async {
+    final SharedPreferences prefs = await _prefs;
+    volume = prefs.getDouble('volume') ?? 0.5;
+    pitch = prefs.getDouble('pitch') ?? 1.0;
+    rate = prefs.getDouble('rate') ?? 0.5;
+  }
+
+  void _saveSettings(double volume, double pitch, double rate) async {
+    final SharedPreferences prefs = await _prefs;
+    await prefs.setDouble('volume', volume);
+    await prefs.setDouble('pitch', pitch);
+    await prefs.setDouble('rate', rate);
+  }
+
   // Do initial setup
   initTts() {
     flutterTts = FlutterTts();
@@ -293,8 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
     initTts();
     super.initState();
     _getLists();
-    // _saveList(historyList, 'historyJson');
-    // _saveList(savedList, 'savedJson');
+    _getSettings();
   }
 
   @override
@@ -340,6 +353,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       rate = values['rate'];
                       pitch = values['pitch'];
                     });
+                    _saveSettings(
+                        values['volume'], values['rate'], values['pitch']);
                   }
                 },
               ),
