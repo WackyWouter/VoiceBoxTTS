@@ -141,8 +141,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     //  TODO add functionality to remove adds
                     // https://pub.dev/packages/in_app_purchase
                   },
-                  child: const Text(
-                    'Remove Adds',
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      FaIcon(
+                        FontAwesomeIcons.shoppingCart,
+                        size: 23,
+                      ),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      Text(
+                        'Remove Adds',
+                      ),
+                    ],
                   ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
