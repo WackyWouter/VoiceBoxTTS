@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voiceboxtts/constants.dart' as constants;
 import 'package:voiceboxtts/models/fav_list_item.dart';
 import 'package:voiceboxtts/screens/settings_screen.dart';
@@ -23,9 +24,8 @@ class HomeScreen extends StatefulWidget {
 enum TtsState { playing, stopped, paused, continued }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // TODO make the list be remembered between app startups
-  // https://stackoverflow.com/questions/61316208/how-to-save-listobject-to-sharedpreferences-in-flutter
-  // https://stackoverflow.com/questions/63280237/flutter-how-to-save-list-data-locally
+  // Obtain shared preferences.
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   ////////////////////////// START HISTORY/SAVED LISTS //////////////////////////////
   String activeSection = "history";
@@ -33,14 +33,47 @@ class _HomeScreenState extends State<HomeScreen> {
   List<FavListItem> savedList = [];
   final textFieldCont = TextEditingController();
 
+  Future<void> _saveList(List<FavListItem> list, String listName) async {
+    final SharedPreferences prefs = await _prefs;
+    final String encodedList = FavListItem.encode(list);
+
+    await prefs.setString(listName, encodedList);
+  }
+
+  void _getLists() async {
+    final SharedPreferences prefs = await _prefs;
+    final String historyJson = prefs.getString('historyJson') ?? '[]';
+    historyList = FavListItem.decode(historyJson);
+
+    final String savedJson = prefs.getString('savedJson') ?? '[]';
+    savedList = FavListItem.decode(savedJson);
+  }
+
   // Save the input as the new text
   void _onChange(String text) {
     setState(() {
-      // if text is not being cleared add it to history list
-      if (text != '' && _newVoiceText != text) {
+      // Check if the text already exists in the history list
+      List<FavListItem> oldItemsList =
+          historyList.where((favListItem) => favListItem.text == text).toList();
+
+      // Theoretically oldItemsList should never contain more then one item but if there is more than one, we only want the first
+      if (oldItemsList.isNotEmpty) {
+        for (var oldItem in oldItemsList) {
+          historyList.remove(oldItem);
+        }
+        // Add it back into at the top
+        historyList.insert(0, oldItemsList[0]);
+
+        // Save the list
+        _saveList(historyList, 'historyJson');
+      } else if (text != '' && _newVoiceText != text) {
+        // Add it to the list at the top as a new FavListItem
         historyList.insert(0, FavListItem(text, false));
+        //Save the list
+        _saveList(historyList, 'historyJson');
       }
 
+      // update the _newVoiceText if its not already set to that text
       if (_newVoiceText != text) {
         _newVoiceText = text;
       }
@@ -63,15 +96,44 @@ class _HomeScreenState extends State<HomeScreen> {
   // set or unset text as favourite
   void _toggleFavourite(FavListItem item) {
     setState(() {
+      bool oldFavouriteVal = item.isFavourite;
       // Toggle favourite on the current list item if clicked on star
-      item.toggleFav();
 
-      // if it is being favoured add to saved list otherwise remove from saved list
-      if (item.isFavorite) {
-        savedList.insert(0, item);
+      // Update the history list item as well since the items in both lists are not linked anymore after reading from sharedpreferences
+      List<FavListItem> savedItemsList = savedList
+          .where((favListItem) => favListItem.text == item.text)
+          .toList();
+
+      // Theoretically historyItemsList should never contain more then one item but can contain none
+      if (savedItemsList.isNotEmpty) {
+        for (var savedItem in savedItemsList) {
+          savedItem.setFav(!oldFavouriteVal);
+
+          // If saved item is set to un favourite now then remove it from the list
+          if (!savedItem.isFavourite) {
+            savedList.remove(savedItem);
+          }
+        }
       } else {
-        savedList.remove(item);
+        // If the saved item list is empty that means that this is an addition to the save list so set it to favourite and add it to the saved list
+        item.setFav(true);
+        savedList.insert(0, item);
       }
+
+      // Update the history list item as well since the items in both lists are not linked anymore after reading from sharedpreferences
+      List<FavListItem> historyItemsList = historyList
+          .where((favListItem) => favListItem.text == item.text)
+          .toList();
+
+      // Theoretically historyItemsList should never contain more then one item but can contain none
+      if (historyItemsList.isNotEmpty) {
+        for (var historyItem in historyItemsList) {
+          historyItem.setFav(!oldFavouriteVal);
+        }
+      }
+
+      _saveList(savedList, 'savedJson');
+      _saveList(historyList, 'historyJson');
     });
   }
   ////////////////////////// END HISTORY/SAVED LISTS //////////////////////////////
@@ -230,6 +292,9 @@ class _HomeScreenState extends State<HomeScreen> {
   initState() {
     initTts();
     super.initState();
+    _getLists();
+    // _saveList(historyList, 'historyJson');
+    // _saveList(savedList, 'savedJson');
   }
 
   @override
@@ -378,7 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemBuilder: (BuildContext context, int index) {
                           //Determine which icon should be shown
                           IconData iconShown;
-                          if (listShown[index].isFavorite) {
+                          if (listShown[index].isFavourite) {
                             iconShown = FontAwesomeIcons.solidStar;
                           } else {
                             iconShown = FontAwesomeIcons.star;
