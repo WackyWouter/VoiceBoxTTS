@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voiceboxtts/constants.dart' as constants;
 import 'package:voiceboxtts/models/fav_list_item.dart';
@@ -11,6 +12,8 @@ import 'package:voiceboxtts/widgets/custom_card.dart';
 import 'package:voiceboxtts/widgets/custom_icon_btn.dart';
 import 'package:voiceboxtts/widgets/section_btn.dart';
 import 'package:voiceboxtts/widgets/show_divider.dart';
+
+import '../ad_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String id = 'home_screen';
@@ -27,7 +30,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // Obtain shared preferences.
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
-  ////////////////////////// START HISTORY/SAVED LISTS //////////////////////////////
+  ///////////////////////// GOOGLE ADS ///////////////////////////////////
+  late BannerAd _bannerAd;
+  bool _isBannerAdReady = false;
+
+  ////////////////////////// HISTORY/SAVED LISTS //////////////////////////////
   String activeSection = "history";
   List<FavListItem> historyList = [];
   List<FavListItem> savedList = [];
@@ -136,9 +143,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _saveList(historyList, 'historyJson');
     });
   }
-  ////////////////////////// END HISTORY/SAVED LISTS //////////////////////////////
 
-  ////////////////////////// START FLUTTER TTS //////////////////////////////
+  ////////////////////////// FLUTTER TTS //////////////////////////////
   // Declare variables
   late FlutterTts flutterTts;
   String? language = 'en-GB';
@@ -246,9 +252,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return false;
     }
   }
-  ////////////////////////// END FLUTTER TTS //////////////////////////////
 
-  ////////////////////////// START ERROR POPUPS //////////////////////////////
+  ////////////////////////// ERROR POPUPS //////////////////////////////
   Future<void> _showDialog() async {
     return showDialog<void>(
       context: context,
@@ -299,24 +304,43 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  ////////////////////////// END ERROR POPUPS //////////////////////////////
 
-  ////////////////////////// START STATE FUNCTIONS //////////////////////////////
+  //////////////////////////  STATE FUNCTIONS //////////////////////////////
   @override
   initState() {
     initTts();
     super.initState();
     _getLists();
     _getSettings();
+
+    _bannerAd = BannerAd(
+      adUnitId: AdHelper.bannerAdUnitId,
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          setState(() {
+            _isBannerAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          debugPrint('Failed to load a banner ad: ${err.message}');
+          _isBannerAdReady = false;
+          ad.dispose();
+        },
+      ),
+    );
+
+    _bannerAd.load();
   }
 
   @override
   void dispose() {
+    _bannerAd.dispose();
     textFieldCont.dispose();
     super.dispose();
     flutterTts.stop();
   }
-  ////////////////////////// END STATE FUNCTIONS //////////////////////////////
 
   @override
   Widget build(BuildContext context) {
@@ -402,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       controller: textFieldCont,
                       decoration: const InputDecoration(
                           border: InputBorder.none, hintText: 'Type here...'),
-                      maxLines: 10,
+                      maxLines: 9,
                     ),
                   ),
                   Row(
@@ -514,10 +538,23 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
               child: Container(
                 height: 50,
-                width: double.maxFinite,
+                width: 320,
                 color: Colors.white,
                 alignment: Alignment.center,
-                child: const Text('Advertisement'),
+                child: Stack(
+                  children: [
+                    const Center(child: Text('Advertisement')),
+                    if (_isBannerAdReady)
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: SizedBox(
+                          width: _bannerAd.size.width.toDouble(),
+                          height: _bannerAd.size.height.toDouble(),
+                          child: AdWidget(ad: _bannerAd),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             )
           ],

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:voiceboxtts/screens/home_screen.dart';
 import 'package:voiceboxtts/screens/settings_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
   runApp(const VoiceBoxTTS());
 }
 

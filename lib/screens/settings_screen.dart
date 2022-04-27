@@ -139,6 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ElevatedButton(
                   onPressed: () {
                     //  TODO add functionality to remove adds
+                    // https://pub.dev/packages/in_app_purchase
                   },
                   child: const Text(
                     'Remove Adds',

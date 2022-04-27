@@ -37,6 +37,7 @@ dependencies:
   dropdown_button2: ^1.1.1
   flutter_tts: ^3.3.3
   shared_preferences: ^2.0.13
+  google_mobile_ads: ^1.2.0
 
 
 
