@@ -33,6 +33,32 @@ class _HomeScreenState extends State<HomeScreen> {
   ///////////////////////// GOOGLE ADS ///////////////////////////////////
   late BannerAd _bannerAd;
   bool _isBannerAdReady = false;
+  late InterstitialAd _interstitialAd;
+  bool _isInterstitialAdReady = false;
+
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: AdHelper.interstitialAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialAd = ad;
+
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              _moveToSettings();
+            },
+          );
+
+          _isInterstitialAdReady = true;
+        },
+        onAdFailedToLoad: (err) {
+          debugPrint('Failed to load an interstitial ad: ${err.message}');
+          _isInterstitialAdReady = false;
+        },
+      ),
+    );
+  }
 
   ////////////////////////// HISTORY/SAVED LISTS //////////////////////////////
   String activeSection = "history";
@@ -70,15 +96,18 @@ class _HomeScreenState extends State<HomeScreen> {
         }
         // Add it back into at the top
         historyList.insert(0, oldItemsList[0]);
-
-        // Save the list
-        _saveList(historyList, 'historyJson');
       } else if (text != '' && _newVoiceText != text) {
         // Add it to the list at the top as a new FavListItem
         historyList.insert(0, FavListItem(text, false));
-        //Save the list
-        _saveList(historyList, 'historyJson');
       }
+
+      // Check if the list exceeds 30 with the new addition
+      if (historyList.length > 5) {
+        historyList.removeRange(5, historyList.length);
+      }
+
+      //Save the list
+      _saveList(historyList, 'historyJson');
 
       // update the _newVoiceText if its not already set to that text
       if (_newVoiceText != text) {
@@ -171,12 +200,45 @@ class _HomeScreenState extends State<HomeScreen> {
     await prefs.setDouble('rate', rate);
   }
 
+  void _moveToSettings() async {
+    print('movetoSettings');
+    print(_isInterstitialAdReady);
+    dynamic values = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SettingsScreen(
+          volume: volume,
+          rate: rate,
+          pitch: pitch,
+          interstitialAd: _isInterstitialAdReady ? _interstitialAd : null,
+          isInterstitialAdReady: _isInterstitialAdReady,
+        ),
+      ),
+    );
+
+    if (values != null) {
+      setState(() {
+        volume = values['volume'];
+        rate = values['rate'];
+        pitch = values['pitch'];
+        _isInterstitialAdReady = values['isInterstitialAdReady'];
+      });
+
+      _saveSettings(values['volume'], values['rate'], values['pitch']);
+    } else {
+      setState(() {
+        _isInterstitialAdReady = false;
+      });
+    }
+    _loadInterstitialAd();
+  }
+
   // Do initial setup
   initTts() {
     flutterTts = FlutterTts();
 
     // Set default language
-    changedLanguageDropDownItem(language);
+    _changedLanguageDropDownItem(language);
 
     flutterTts.setStartHandler(() {
       setState(() {
@@ -238,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Update the selected language
-  Future<bool> changedLanguageDropDownItem(String? selectedType) async {
+  Future<bool> _changedLanguageDropDownItem(String? selectedType) async {
     bool isLanguageSupported =
         await flutterTts.isLanguageAvailable(selectedType!);
 
@@ -279,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: constants.textButtonStyle,
               ),
               onPressed: () {
-                changedLanguageDropDownItem('en-GB');
+                _changedLanguageDropDownItem('en-GB');
                 Navigator.of(context).pop();
               },
             ),
@@ -332,11 +394,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     _bannerAd.load();
+
+    _loadInterstitialAd();
   }
 
   @override
   void dispose() {
     _bannerAd.dispose();
+    _interstitialAd.dispose();
     textFieldCont.dispose();
     super.dispose();
     flutterTts.stop();
@@ -360,27 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.center,
               child: CustomIconBtn(
                 icon: FontAwesomeIcons.cog,
-                onTap: () async {
-                  dynamic values = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SettingsScreen(
-                        volume: volume,
-                        rate: rate,
-                        pitch: pitch,
-                      ),
-                    ),
-                  );
-                  if (values != null) {
-                    setState(() {
-                      volume = values['volume'];
-                      rate = values['rate'];
-                      pitch = values['pitch'];
-                    });
-                    _saveSettings(
-                        values['volume'], values['rate'], values['pitch']);
-                  }
-                },
+                onTap: _moveToSettings,
               ),
             ),
           )
@@ -401,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: const FaIcon(FontAwesomeIcons.caretDown,
                       color: constants.primary, size: 30),
                   onChanged: (String? value) async {
-                    bool success = await changedLanguageDropDownItem(value);
+                    bool success = await _changedLanguageDropDownItem(value);
 
                     //If it failed show dialog that language is not supported
                     if (!success) {
@@ -475,7 +520,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             }),
                       ],
                     ),
-                    // https://stackoverflow.com/questions/49927200/how-do-i-create-a-list-view-of-buttons-in-flutter/53775014
                     Expanded(
                       child: ListView.builder(
                         itemCount: listShown.length,

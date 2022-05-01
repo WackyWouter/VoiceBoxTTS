@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:voiceboxtts/constants.dart' as constants;
 import 'package:voiceboxtts/widgets/custom_card.dart';
 import 'package:voiceboxtts/widgets/custom_icon_btn.dart';
@@ -11,8 +12,16 @@ class SettingsScreen extends StatefulWidget {
   double pitch;
   double rate;
   double volume;
+  InterstitialAd? interstitialAd;
+  bool isInterstitialAdReady;
 
-  SettingsScreen({Key? key, this.pitch = 0, this.rate = 0, this.volume = 0})
+  SettingsScreen(
+      {Key? key,
+      this.pitch = 0,
+      this.rate = 0,
+      this.volume = 0,
+      this.interstitialAd,
+      this.isInterstitialAdReady = false})
       : super(key: key);
 
   @override
@@ -20,6 +29,40 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  void _showInterstitialAd() {
+    print('showAdd');
+    print(widget.isInterstitialAdReady);
+    if (widget.interstitialAd == null || !widget.isInterstitialAdReady) {
+      debugPrint('Warning: attempt to show interstitial before loaded.');
+      return;
+    }
+    widget.interstitialAd!.fullScreenContentCallback =
+        FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (InterstitialAd ad) {
+        ad.dispose();
+      },
+    );
+    print('testing');
+    print(widget.interstitialAd);
+    widget.interstitialAd!.show();
+    widget.isInterstitialAdReady = false;
+  }
+
+  @override
+  initState() {
+    super.initState();
+    _showInterstitialAd();
+  }
+
+  @override
+  void dispose() {
+    if (widget.interstitialAd != null) {
+      widget.interstitialAd!.dispose();
+    }
+
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,6 +170,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   'volume': widget.volume,
                                   'rate': widget.rate,
                                   'pitch': widget.pitch,
+                                  'isInterstitialAdReady':
+                                      widget.isInterstitialAdReady
                                 });
                               },
                             ),
