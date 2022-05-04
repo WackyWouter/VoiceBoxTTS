@@ -201,8 +201,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _moveToSettings() async {
-    print('movetoSettings');
-    print(_isInterstitialAdReady);
     dynamic values = await Navigator.push(
       context,
       MaterialPageRoute(

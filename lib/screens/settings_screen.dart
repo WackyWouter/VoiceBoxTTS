@@ -30,8 +30,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   void _showInterstitialAd() {
-    print('showAdd');
-    print(widget.isInterstitialAdReady);
     if (widget.interstitialAd == null || !widget.isInterstitialAdReady) {
       debugPrint('Warning: attempt to show interstitial before loaded.');
       return;
@@ -42,8 +40,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ad.dispose();
       },
     );
-    print('testing');
-    print(widget.interstitialAd);
     widget.interstitialAd!.show();
     widget.isInterstitialAdReady = false;
   }
@@ -181,34 +177,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    //  TODO add functionality to remove adds
-                    // https://pub.dev/packages/in_app_purchase
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      FaIcon(
-                        FontAwesomeIcons.shoppingCart,
-                        size: 23,
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Text(
-                        'Remove Adds',
-                      ),
-                    ],
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    primary: constants.primary,
-                    // padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                    textStyle: constants.headerStyle,
-                  ),
-                ),
+                // ElevatedButton(
+                //   onPressed: () {
+                //     //  TODO add functionality to remove adds
+                //     // https://pub.dev/packages/in_app_purchase
+                //   },
+                //   child: Row(
+                //     mainAxisSize: MainAxisSize.min,
+                //     children: const [
+                //       FaIcon(
+                //         FontAwesomeIcons.shoppingCart,
+                //         size: 23,
+                //       ),
+                //       SizedBox(
+                //         width: 10,
+                //       ),
+                //       Text(
+                //         'Remove Adds',
+                //       ),
+                //     ],
+                //   ),
+                //   style: ElevatedButton.styleFrom(
+                //     padding: const EdgeInsets.symmetric(
+                //         horizontal: 20, vertical: 10),
+                //     primary: constants.primary,
+                //     // padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                //     textStyle: constants.headerStyle,
+                //   ),
+                // ),
               ],
             ),
             CustomCard(
