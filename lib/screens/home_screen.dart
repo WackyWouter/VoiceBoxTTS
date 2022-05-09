@@ -85,6 +85,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // Save the input as the new text
   void _onChange(String text) {
     setState(() {
+      // Remove starting and trailing white space
+      text = text.trim();
+
       // Check if the text already exists in the history list
       List<FavListItem> oldItemsList =
           historyList.where((favListItem) => favListItem.text == text).toList();
