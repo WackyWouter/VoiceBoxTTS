@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -30,18 +32,24 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   void _showInterstitialAd() {
-    if (widget.interstitialAd == null || !widget.isInterstitialAdReady) {
-      debugPrint('Warning: attempt to show interstitial before loaded.');
-      return;
+    // Only show half of the time
+    var random = Random();
+
+    if (random.nextInt(2 - 0) == 1) {
+      if (widget.interstitialAd == null || !widget.isInterstitialAdReady) {
+        debugPrint('Warning: attempt to show interstitial before loaded.');
+        return;
+      }
+
+      widget.interstitialAd!.fullScreenContentCallback =
+          FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (InterstitialAd ad) {
+          ad.dispose();
+        },
+      );
+      widget.interstitialAd!.show();
+      widget.isInterstitialAdReady = false;
     }
-    widget.interstitialAd!.fullScreenContentCallback =
-        FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (InterstitialAd ad) {
-        ad.dispose();
-      },
-    );
-    widget.interstitialAd!.show();
-    widget.isInterstitialAdReady = false;
   }
 
   @override
@@ -177,34 +185,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ),
-                // ElevatedButton(
-                //   onPressed: () {
-                //     //  TODO add functionality to remove adds
-                //     // https://pub.dev/packages/in_app_purchase
-                //   },
-                //   child: Row(
-                //     mainAxisSize: MainAxisSize.min,
-                //     children: const [
-                //       FaIcon(
-                //         FontAwesomeIcons.shoppingCart,
-                //         size: 23,
-                //       ),
-                //       SizedBox(
-                //         width: 10,
-                //       ),
-                //       Text(
-                //         'Remove Adds',
-                //       ),
-                //     ],
-                //   ),
-                //   style: ElevatedButton.styleFrom(
-                //     padding: const EdgeInsets.symmetric(
-                //         horizontal: 20, vertical: 10),
-                //     primary: constants.primary,
-                //     // padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                //     textStyle: constants.headerStyle,
-                //   ),
-                // ),
               ],
             ),
             CustomCard(
