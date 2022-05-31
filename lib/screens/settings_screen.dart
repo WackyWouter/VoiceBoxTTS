@@ -201,7 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       height: 5,
                     ),
                     Text(
-                      'Version: 1.0',
+                      'Version: 1.0.1',
                       style: constants.textStyle.copyWith(fontSize: 14),
                     ),
                   ],
